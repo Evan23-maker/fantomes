@@ -4,28 +4,42 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Fantômes — Débusque les abonnements que tu paies sans t'en servir</title>
-<meta name="description" content="Dépose ton relevé bancaire : on repère les prélèvements oubliés et on écrit les lettres de résiliation.">
+<meta name="description" content="Réponds à 3 questions : on chiffre ce que tes abonnements oubliés te coûtent par an.">
 <meta property="og:title" content="Fantômes — Débusque les abonnements que tu paies sans t'en servir">
-<meta property="og:description" content="Dépose ton relevé bancaire : on repère les prélèvements oubliés et on écrit les lettres de résiliation.">
+<meta property="og:description" content="Réponds à 3 questions : on chiffre ce que tes abonnements oubliés te coûtent par an.">
 <meta property="og:type" content="website">
 <style>
 :root{--fond:#F4F1EA;--encre:#16130F;--accent:#D9480F}
 *{box-sizing:border-box}
 body{margin:0;background:var(--fond);color:var(--encre);font:18px/1.5 system-ui,sans-serif}
-main{max-width:34rem;margin:0 auto;padding:2.5rem 1.25rem 4rem}
-h1{font:700 2.2rem/1.1 Georgia,serif;margin:0 0 1rem}
-h1 em{color:var(--accent);font-style:normal}
+main{max-width:34rem;margin:0 auto;padding:2rem 1.25rem 4rem}
+section{display:none}
+section.on{display:block}
+h1,h2{font-family:Georgia,serif;line-height:1.15;margin:0}
+h1{font-size:2.2rem;margin-bottom:1rem}
+h2{font-size:1.7rem;margin:1rem 0 1.25rem}
+em{color:var(--accent);font-style:normal}
 .douleur{border-left:4px solid var(--accent);padding-left:1rem;margin:1.5rem 0}
 ul{padding:0;list-style:none;margin:1.5rem 0 2rem}
 li{padding:.9rem 0;border-top:1px solid #16130F26}
 li strong{display:block;font-family:Georgia,serif}
-.bouton{display:block;text-align:center;background:var(--accent);color:#fff;text-decoration:none;font-weight:700;padding:1.1rem;border-radius:.5rem;min-height:3.25rem}
+.bouton{display:block;width:100%;text-align:center;background:var(--accent);color:#fff;border:0;font:700 1rem system-ui,sans-serif;padding:1.1rem;border-radius:.5rem;min-height:3.25rem;text-decoration:none;cursor:pointer}
+.choix{display:block;width:100%;text-align:left;background:#fff;color:var(--encre);border:2px solid #16130F26;border-radius:.5rem;padding:1rem;margin:0 0 .75rem;font:inherit;min-height:3.25rem;cursor:pointer}
+.choix:active{border-color:var(--accent)}
+.barre{height:6px;background:#16130F1A;border-radius:3px}
+.barre i{display:block;height:100%;width:0;background:var(--accent);border-radius:3px;transition:width .3s}
+.etape{font-size:.85rem;opacity:.7;margin:.5rem 0 0}
+.chiffre{font:700 3.2rem Georgia,serif;color:var(--accent);margin:.25rem 0 0;line-height:1}
+.recap{background:#fff;border-radius:.5rem;padding:1rem;margin:1.25rem 0;font-size:.95rem}
+.recap div{padding:.2rem 0}
 .petit{font-size:.85rem;text-align:center;margin-top:.75rem;opacity:.75}
 footer{font-size:.8rem;text-align:center;opacity:.6;margin-top:3rem}
 </style>
 </head>
 <body>
 <main>
+
+<section id="accueil" class="on">
 <h1>Tu paies des abonnements <em>que tu n'utilises plus.</em></h1>
 <p class="douleur">Un abonnement oublié à 9,99 € par mois, c'est <strong>120 € par an</strong>. Multiplié par trois ou quatre, ça fait vite un voyage.</p>
 <ul>
@@ -33,9 +47,82 @@ footer{font-size:.8rem;text-align:center;opacity:.6;margin-top:3rem}
 <li><strong>Classés par coût annuel</strong>Tu vois d'abord ceux qui te coûtent le plus.</li>
 <li><strong>Lettre de résiliation prête</strong>Une lettre par abonnement, il ne reste qu'à l'envoyer.</li>
 </ul>
-<a class="bouton" href="https://buy.stripe.com/test_dRm8wO2Ty8IY7jb0do1kA00">Obtenir mon audit — 19 €</a>
+<button class="bouton" onclick="demarrer()">Commencer, c'est gratuit</button>
+<p class="petit">3 questions, 30 secondes.</p>
+</section>
+
+<section id="quiz">
+<div class="barre"><i id="prog"></i></div>
+<p class="etape" id="etape"></p>
+<h2 id="question"></h2>
+<div id="choix"></div>
+</section>
+
+<section id="resultat">
+<div class="barre"><i style="width:100%"></i></div>
+<h2>Voilà ce que tes abonnements oubliés te coûtent.</h2>
+<p class="chiffre" id="perte"></p>
+<p>par an, d'après tes réponses (estimation).</p>
+<div class="recap" id="recap"></div>
+<p id="conclusion"></p>
+<a class="bouton" id="payer" href="https://buy.stripe.com/test_dRm8wO2Ty8IY7jb0do1kA00">Obtenir mon audit — 19 €</a>
 <p class="petit">Paiement unique, pas d'abonnement.</p>
+</section>
+
 <footer>Fantômes</footer>
 </main>
+
+<script>
+var questions=[
+{t:"Combien d'abonnements ou de prélèvements récurrents penses-tu avoir ?",k:"n",o:[["1 à 3",3],["4 à 6",6],["7 ou plus",9]]},
+{t:"En moyenne, chacun te coûte combien par mois ?",k:"m",o:[["Moins de 5 €",4],["Entre 5 et 10 €",8],["Plus de 10 €",14]]},
+{t:"Combien en as-tu oublié ou n'utilises presque plus ?",k:"f",o:[["Un seul",1],["Deux",2],["Trois ou plus",3],["Aucune idée",2]]}
+];
+var rep={},lib={},i=0;
+function voir(id){
+  var s=document.querySelectorAll("section");
+  for(var j=0;j<s.length;j++){s[j].className="";}
+  document.getElementById(id).className="on";
+  window.scrollTo(0,0);
+}
+function demarrer(){i=0;rep={};lib={};poser();voir("quiz");}
+function poser(){
+  var q=questions[i];
+  document.getElementById("prog").style.width=(i/3*100)+"%";
+  document.getElementById("etape").textContent="Question "+(i+1)+" sur 3";
+  document.getElementById("question").textContent=q.t;
+  var c=document.getElementById("choix");
+  c.textContent="";
+  q.o.forEach(function(o,idx){
+    var b=document.createElement("button");
+    b.className="choix";
+    b.textContent=o[0];
+    b.onclick=function(){repondre(idx);};
+    c.appendChild(b);
+  });
+}
+function repondre(idx){
+  var q=questions[i];
+  rep[q.k]=q.o[idx][1];
+  lib[q.k]=q.o[idx][0];
+  i++;
+  if(i<3){poser();}else{resultat();}
+}
+function resultat(){
+  var f=Math.min(rep.f,rep.n);
+  var perte=f*rep.m*12;
+  var fois=Math.max(1,Math.round(perte/19));
+  document.getElementById("perte").textContent=perte+" €";
+  var r=document.getElementById("recap");
+  r.textContent="";
+  [["Abonnements : "+lib.n],["Coût moyen par mois : "+lib.m],["Oubliés ou presque plus utilisés : "+lib.f]].forEach(function(l){
+    var d=document.createElement("div");
+    d.textContent=l[0];
+    r.appendChild(d);
+  });
+  document.getElementById("conclusion").textContent="Notre audit repère tes fantômes et écrit les lettres de résiliation. Tu paies 19 € une seule fois pour récupérer jusqu'à "+perte+" € par an, soit "+fois+" fois sa valeur.";
+  voir("resultat");
+}
+</script>
 </body>
 </html>
